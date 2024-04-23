@@ -38,16 +38,18 @@ import java.util.*;
 
 public class ProductController implements ActionListener, MouseListener, KeyListener, TableActionEvent, TableModelListener {
     private final QuanLySanPham sanPhamUI;
-    private  List<SanPham> dsSanPham;
-    private  SanPhamDAO<SanPham> sanPhamDAO;
+    private List<SanPham> dsSanPham;
+    private SanPhamDAO<SanPham> sanPhamDAO;
     private List<LoaiSanPham> dsLoaiSanPham;
-    private  LoaiSanPhamDAO<LoaiSanPham> loaiSanPhamDAO;
-    private  ThuongHieuDAO<ThuongHieu> thuongHieuDAO;
+    private LoaiSanPhamDAO<LoaiSanPham> loaiSanPhamDAO;
+    private ThuongHieuDAO<ThuongHieu> thuongHieuDAO;
     private List<ThuongHieu> dsThuongHieu;
     private List<DanhMucSanPham> dsDanhMucSanPham;
-    private  DanhMucSanPhamDAO<DanhMucSanPham> danhMucSanPhamDAO;
-    private  ChiTietPhienBanSanPhamDAO<ChiTietPhienBanSanPham> chiTietPhienBanSanPhamDAO;
-    private  ThueDAO<Thue> thueDAO;
+    private DanhMucSanPhamDAO<DanhMucSanPham> danhMucSanPhamDAO;
+    private ChiTietPhienBanSanPhamDAO<ChiTietPhienBanSanPham> chiTietPhienBanSanPhamDAO;
+    private ThueDAO<Thue> thueDAO;
+    private List<ChiTietPhienBanSanPham> dsChiTietPhienBanSanPham;
+    private DefaultTableModel tmChiTietPhienBanSanPham;
 
     private static int trangThaiNutXoa = 0;
     private static int trangThaiNutThem = 0;
@@ -57,7 +59,10 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     private static String fileAnh = "";
     private final ArrayList<ChiTietPhienBanSanPham> listCTPBSP = new ArrayList<>();
     private String maLoai = "";
+    private String maLoaiSP ="";
     private static final AppUtils instance = AppUtils.getInstance();
+    private static SanPham sp = new SanPham();
+
     public ProductController(QuanLySanPham sanPhamUI) {
         try {
             this.sanPhamUI = sanPhamUI;
@@ -75,7 +80,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         }
     }
 
-//  Load data từ CSDL lên table
+    //  Load data từ CSDL lên table
     public void loadDsSanPham() {
         DefaultTableModel clearTable = (DefaultTableModel) sanPhamUI.getTbDanhSachSanPham().getModel();
 
@@ -85,8 +90,8 @@ public class ProductController implements ActionListener, MouseListener, KeyList
             dsSanPham = sanPhamDAO.timKiem();
 
             DefaultTableModel tmSanPham = (DefaultTableModel) sanPhamUI.getTbDanhSachSanPham().getModel();
-            for(SanPham sp : dsSanPham){
-                String[] row = {sp.getMaSP(), sp.getTenSP(), sp.getLoaiSanPham().getDanhMucSanPham().getTenDM(), sp.getLoaiSanPham().getTenLoai(), sp.getPhongCachMac()+"", sp.getThuongHieu().getTenTH(),sp.getDoTuoi().toString() , sp.getTinhTrang()+""};
+            for (SanPham sp : dsSanPham) {
+                String[] row = {sp.getMaSP(), sp.getTenSP(), sp.getLoaiSanPham().getDanhMucSanPham().getTenDM(), sp.getLoaiSanPham().getTenLoai(), sp.getPhongCachMac() + "", sp.getThuongHieu().getTenTH(), sp.getDoTuoi().toString(), sp.getTinhTrang() + ""};
                 tmSanPham.addRow(row);
             }
         } catch (Exception e) {
@@ -101,12 +106,12 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     private List<SanPham> dsTam = new ArrayList<>();
 
     @Override
-    public void actionPerformed(ActionEvent e){
+    public void actionPerformed(ActionEvent e) {
         Object op = e.getSource();
         /*NÚT THÊM*/
-        if(op.equals(sanPhamUI.getButtonThem())){
+        if (op.equals(sanPhamUI.getButtonThem())) {
             // Thực hiện biến đổi các nút thành nút chức năng của nghiệp vụ thêm sản phẩm
-            if (trangThaiNutThem==0) {
+            if (trangThaiNutThem == 0) {
                 sanPhamUI.getButtonThem().setText("Xác nhận thêm");
                 sanPhamUI.getButtonSua().setText("Xóa trắng");
                 sanPhamUI.getButtonXoa().setText("Thoát thêm");
@@ -125,23 +130,22 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 sanPhamUI.getCbTinhTrang().setSelectedItem("CON_BAN");
             }
             // Thực hiện chức năng nghiệp vụ thêm sản phẩm
-            else if(trangThaiNutThem==1) {
+            else if (trangThaiNutThem == 1) {
                 SanPham sp = layDataThem();
-                if(sp != null){
-                    if ((JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn thêm sản phẩm mới", "Lựa chọn", JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION){
+                if (sp != null) {
+                    if ((JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn thêm sản phẩm mới", "Lựa chọn", JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
                         try {
-                            if(sanPhamDAO.them(sp)){
-
-                                if(listCTPBSP.size()>0){
-                                    for(ChiTietPhienBanSanPham ct : listCTPBSP){
+                            if (sanPhamDAO.them(sp)) {
+                                if (dsChiTietPhienBanSanPham.size() > 0) {
+                                    for (ChiTietPhienBanSanPham ct : dsChiTietPhienBanSanPham) {
                                         chiTietPhienBanSanPhamDAO.them(ct);
-                                        String data = ct.getMaPhienBanSP();
-                                        String path = "src/main/resources/MaQRSanPham/"+ct.getMaPhienBanSP()+".jpg";
-
-                                        BitMatrix matrix = new MultiFormatWriter()
-                                                .encode(data, BarcodeFormat.QR_CODE, 500, 500);
-
-                                        MatrixToImageWriter.writeToPath(matrix, "jpg", Paths.get(path));
+//                                        String data = ct.getMaPhienBanSP();
+//                                        String path = "src/main/resources/MaQRSanPham/" + ct.getMaPhienBanSP() + ".jpg";
+//
+//                                        BitMatrix matrix = new MultiFormatWriter()
+//                                                .encode(data, BarcodeFormat.QR_CODE, 500, 500);
+//
+//                                        MatrixToImageWriter.writeToPath(matrix, "jpg", Paths.get(path));
                                     }
                                 }
                                 loadDsSanPham();
@@ -150,7 +154,9 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                                 trangThaiNutThem = 0;
                                 trangThaiNutXoa = 0;
                                 listCTPBSP.clear();
-                            }else{
+                                dsChiTietPhienBanSanPham.clear();
+                            } else {
+                                System.out.println(sp.toString());
                                 JOptionPane.showMessageDialog(null, "Thêm thất bại!");
                             }
                         } catch (Exception ex) {
@@ -160,16 +166,16 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 }
             }
             //Thực hiện chức năng nghiệp vụ sửa sản phẩm
-            else if(trangThaiNutThem==2){
+            else if (trangThaiNutThem == 2) {
                 if (sanPhamUI.getTxtMaSanPham().getText().equals("")) {
                     JOptionPane.showMessageDialog(null, "Vui lòng chọn sản phẩm cần sửa!");
-                }else {
+                } else {
                     SanPham spSua = layDataSua();
-                    if ((JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn sửa sản phẩm có mã " +spSua.getMaSP()+" không?", "Lựa chọn", JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION){
+                    if ((JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn sửa sản phẩm có mã " + spSua.getMaSP() + " không?", "Lựa chọn", JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
                         try {
-                            if(sanPhamDAO.capNhat(spSua)){
-                                if(listCTPBSP.size()>0){
-                                    for(ChiTietPhienBanSanPham ct : listCTPBSP){
+                            if (sanPhamDAO.capNhat(spSua)) {
+                                if (listCTPBSP.size() > 0) {
+                                    for (ChiTietPhienBanSanPham ct : listCTPBSP) {
                                         chiTietPhienBanSanPhamDAO.capNhat(ct);
                                     }
                                 }
@@ -182,7 +188,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                                 sanPhamUI.getButtonSua().setText("Sửa sản phẩm");
                                 sanPhamUI.getButtonXoa().setText("Xóa sản phẩm");
                                 listCTPBSP.clear();
-                            }else{
+                            } else {
                                 JOptionPane.showMessageDialog(null, "Sửa thất bại!");
                             }
                         } catch (Exception ex) {
@@ -193,31 +199,47 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 trangThaiNutXoa = 1;
             }
         }
-        /*NÚT PBSP*/
+        /*NÚT THEM PBSP*/
         if (e.getSource().equals(sanPhamUI.getBtnThemPBSP())) {
             trangThaiNutThemPBSP = 0;
-            if(trangThaiNutThem==0){
-                if(sanPhamUI.getTxtMaSanPham().getText().equalsIgnoreCase("")){
+            if (trangThaiNutThem == 0) {
+                if (sanPhamUI.getTxtMaSanPham().getText().equalsIgnoreCase("")) {
                     JOptionPane.showMessageDialog(null, "Vui lòng chọn sản phẩm cần xem phiên bản!");
                     return;
                 }
                 sanPhamUI.getTxtDialogMaSanPham().setEnabled(false);
-
+                sanPhamUI.getBtnDialogThemXuong().setVisible(false);
                 loadTTPBSP();
                 loadComboBoxPhanThongTinPhienBanSP();
                 xoaTrangPBSP(false);
                 anHienWinPBSP(true);
-            }else if(trangThaiNutThem==1){
-                SanPham sp = layDataThem();
-                if(sp==null) {
+
+            } else if (trangThaiNutThem == 1) {
+                sp = layDataThem();
+                if (sp == null) {
                     return;
                 }
-
                 sanPhamUI.getTxtDialogMaSanPham().setText(sanPhamUI.getTxtMaSanPham().getText());
+                if(dsChiTietPhienBanSanPham == null){
+
+                    dsChiTietPhienBanSanPham = new ArrayList<>();
+                    tmChiTietPhienBanSanPham = (DefaultTableModel) sanPhamUI.getTbDialogDanhSachCacSanPham().getModel();
+                    tmChiTietPhienBanSanPham.setRowCount(0);
+
+                }else{
+
+                    tmChiTietPhienBanSanPham.setRowCount(0);
+                    tmChiTietPhienBanSanPham = (DefaultTableModel) sanPhamUI.getTbDialogDanhSachCacSanPham().getModel();
+                    for (ChiTietPhienBanSanPham chiTietPhienBanSanPham : dsChiTietPhienBanSanPham){
+                        String[] row = {chiTietPhienBanSanPham.getMauSac().toString(), chiTietPhienBanSanPham.getKichThuoc().toString(), chiTietPhienBanSanPham.getSoLuong() +"", null};
+                        tmChiTietPhienBanSanPham.addRow(row);
+                    }
+
+                }
                 loadComboBoxPhanThongTinPhienBanSP();
-                xoaTrangPBSP(false);
+                xoaTrangPBSP(true);
                 anHienWinPBSP(true);
-            }else{
+            } else {
                 sanPhamUI.getTxtDialogMaSanPham().setEnabled(false);
                 loadTTPBSP();
                 loadComboBoxPhanThongTinPhienBanSP();
@@ -227,9 +249,9 @@ public class ProductController implements ActionListener, MouseListener, KeyList
 
         }
         /*NÚT SỬA*/
-        if(op.equals(sanPhamUI.getButtonSua())){
+        if (op.equals(sanPhamUI.getButtonSua())) {
             // Thực hiện biến đổi các nút thành nút chức năng của nghiệp vụ sửa sản phẩm
-            if (trangThaiNutSua==0) {
+            if (trangThaiNutSua == 0) {
                 //Mở tương tác với thông tin
                 tuongTac(true);
 
@@ -241,263 +263,264 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 trangThaiNutXoa = 1;
             }
             // Thực hiện xóa trắng dữ liệu ở nghiệp vụ sửa thông tín sản phẩm
-            else if(trangThaiNutSua==1) {
+            else if (trangThaiNutSua == 1) {
                 xoaTrangSua();
             }
         }
-        if(e.getSource().equals(sanPhamUI.getCbLoai()) && trangThaiNutThem == 1){
-            if(!(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("--Select--"))){
-                if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo sơ mi nam")||sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo sơ mi nữ")) {
-                    maLoai = "ASM";
+        if (e.getSource().equals(sanPhamUI.getCbLoai()) && trangThaiNutThem == 1) {
+            if (!(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("--Select--"))) {
+                if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo sơ mi nam") || sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo sơ mi nữ")) {
+                    maLoaiSP = "ASM";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
-                }else if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo thun nam")||sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo thun nữ")){
-                    maLoai = "ATN";
+                } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo thun nam") || sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo thun nữ")) {
+                    maLoaiSP = "ATN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
-                }else if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo khoác nam")||sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo khoác nam")) {
-                    maLoai = "AKN";
+                } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo khoác nam") || sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo khoác nam")) {
+                    maLoaiSP = "AKN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
-                }else if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo Vest")) {
-                    maLoai = "AV";
+                } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo Vest")) {
+                    maLoaiSP = "AV";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
-                }else if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần jeans")) {
-                    maLoai = "QJ";
+                } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần jeans")) {
+                    maLoaiSP = "QJ";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần short")) {
-                    maLoai = "QS";
+                    maLoaiSP = "QS";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nam");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Đầm")) {
-                    maLoai = "DM";
+                    maLoaiSP = "DM";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nữ");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Váy")) {
-                    maLoai = "VY";
+                    maLoaiSP = "VY";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nữ");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo len")) {
-                    maLoai = "AL";
+                    maLoaiSP = "AL";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nữ");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Chân váy")) {
-                    maLoai = "CV";
+                    maLoaiSP = "CV";
                     sanPhamUI.getDanhMuc().setSelectedItem("Quần áo nữ");
-                }  else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần áo trẻ em")) {
-                    maLoai = "QATE";
+                } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần áo trẻ em")) {
+                    maLoaiSP = "QATE";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang phục trẻ em");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày trẻ em")) {
-                    maLoai = "GTE";
+                    maLoaiSP = "GTE";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang phục trẻ em");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Đồ lót trẻ em")) {
-                    maLoai = "DLTE";
+                    maLoaiSP = "DLTE";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang phục trẻ em");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo lót nam")) {
-                    maLoai = "ALN";
+                    maLoaiSP = "ALN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ lót");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần lót nam")) {
-                    maLoai = "QLN";
+                    maLoaiSP = "QLN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ lót");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Áo ngực")) {
-                    maLoai = "ANG";
+                    maLoaiSP = "ANG";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ lót");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần lót nữ")) {
-                    maLoai = "QLN";
+                    maLoaiSP = "QLN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ lót");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Nón")) {
-                    maLoai = "N";
+                    maLoaiSP = "N";
                     sanPhamUI.getDanhMuc().setSelectedItem("Phụ kiên");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Cà vạt")) {
-                    maLoai = "CV";
+                    maLoaiSP = "CV";
                     sanPhamUI.getDanhMuc().setSelectedItem("Phụ kiên");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Thắt lưng")) {
-                    maLoai = "TL";
+                    maLoaiSP = "TL";
                     sanPhamUI.getDanhMuc().setSelectedItem("Phụ kiên");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Tất")) {
-                    maLoai = "T";
+                    maLoaiSP = "T";
                     sanPhamUI.getDanhMuc().setSelectedItem("Phụ kiên");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Quần áo thể thao")) {
-                    maLoai = "QATT";
+                    maLoaiSP = "QATT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ thể thao");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày thể thao")) {
-                    maLoai = "GTT";
+                    maLoaiSP = "GTT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ thể thao");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Balo thể thao")) {
-                    maLoai = "BTT";
+                    maLoaiSP = "BTT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ thể thao");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dụng cụ thể thao")) {
-                    maLoai = "DCTT";
+                    maLoaiSP = "DCTT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Đồ thể thao");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày cao gót")) {
-                    maLoai = "GCG";
+                    maLoaiSP = "GCG";
                     sanPhamUI.getDanhMuc().setSelectedItem("Giày");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày sandal")) {
-                    maLoai = "GS";
+                    maLoaiSP = "GS";
                     sanPhamUI.getDanhMuc().setSelectedItem("Giày");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày sneakers")) {
-                    maLoai = "GSN";
+                    maLoaiSP = "GSN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Giày");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Giày thời trang nam và nữ")) {
-                    maLoai = "GTTNN";
+                    maLoaiSP = "GTTNN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Giày");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dép đi trong nhà")) {
-                    maLoai = "DDTN";
+                    maLoaiSP = "DDTN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Dép");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dép sục cross")) {
-                    maLoai = "DSC";
+                    maLoaiSP = "DSC";
                     sanPhamUI.getDanhMuc().setSelectedItem("Dép");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dép kẹp nam, nữ")) {
-                    maLoai = "DKN";
+                    maLoaiSP = "DKN";
                     sanPhamUI.getDanhMuc().setSelectedItem("Dép");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dép lê")) {
-                    maLoai = "DL";
+                    maLoaiSP = "DL";
                     sanPhamUI.getDanhMuc().setSelectedItem("Dép");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Nhẫn")) {
-                    maLoai = "N";
+                    maLoaiSP = "N";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang sức");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Dây chuyền")) {
-                    maLoai = "DC";
+                    maLoaiSP = "DC";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang sức");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Vòng tay")) {
-                    maLoai = "VT";
+                    maLoaiSP = "VT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang sức");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Bông tai")) {
-                    maLoai = "BT";
+                    maLoaiSP = "BT";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang sức");
                 } else if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("Đồng hồ")) {
-                    maLoai = "DH";
+                    maLoaiSP = "DH";
                     sanPhamUI.getDanhMuc().setSelectedItem("Trang sức");
                 }
                 sanPhamUI.getCbKieuNguoiMac().setEnabled(true);
-
+                if(!maLoai.equals("")){
+                    maLoai = "";
+                    maLoai =  maLoai + maLoaiSP;
+                    if (!sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
+                        if (sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NAM")) {
+                            maLoai += "1";
+                        } else if (sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NU")) {
+                            maLoai += "0";
+                        } else {
+                            maLoai += "2";
+                        }
+                        String nl = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+                        maLoai = maLoai + nl;
+                        maLoai = maLoai + laymaSP();
+                        sanPhamUI.getTxtMaSanPham().setText("");
+                        sanPhamUI.getTxtMaSanPham().setText(maLoai);
+                    }
+                }
             }
         }
-        if(e.getSource().equals(sanPhamUI.getCbKieuNguoiMac())&&trangThaiNutThem==1){
-            if(!sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
-                if(sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NAM")) {
-                    maLoai+="1";
-                }else if(sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NU")) {
+
+        if (e.getSource().equals(sanPhamUI.getCbKieuNguoiMac()) && trangThaiNutThem == 1) {
+            maLoai="";
+            maLoai =  maLoai + maLoaiSP;
+            if (!sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
+                if (sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NAM")) {
+                    maLoai += "1";
+                } else if (sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("NU")) {
                     maLoai += "0";
-                }else{
+                } else {
                     maLoai += "2";
                 }
                 String nl = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-                maLoai = maLoai+nl;
-                maLoai = maLoai+laymaSP();
+                maLoai = maLoai + nl;
+                maLoai = maLoai + laymaSP();
+                sanPhamUI.getTxtMaSanPham().setText("");
                 sanPhamUI.getTxtMaSanPham().setText(maLoai);
             }
         }
-        /*NÚT THÊM PHIÊN BẢN SẢN PHẨM*/
+        /*NÚT THÊM XUONG XUONG*/
         if (e.getSource().equals(sanPhamUI.getBtnDialogThemXuong())) {
-            if(trangThaiNutThem == 0){
-                if(trangThaiNutThemPBSP==0) {
-                    sanPhamUI.getTbDialogDanhSachCacSanPham().clearSelection();
-                    xoaTrangPBSP(true);
-                    trangThaiNutThemPBSP = 1;
-                    sanPhamUI.getBtnDialogThemXuong().setText("Xác nhận thêm");
-                }else{
-                    if(sanPhamUI.getCbDialogMauSac().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn màu sắc!");
-                        return;
-                    }
-                    if(sanPhamUI.getTxtDialogSoLuong().getText().equalsIgnoreCase("")){
-                        JOptionPane.showMessageDialog(null, "Vui lòng nhập số lượng!");
-                        return;
-                    }
-                    if(sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn kích thước!");
-                        return;
-                    }
-                    if(fileAnh.equalsIgnoreCase("")){
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn hình ảnh!");
-                        return;
-                    }
-                    if(!sanPhamUI.getTxtDialogSoLuong().getText().matches("\\d+")){
-                        if(Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText())<0){
-                            JOptionPane.showMessageDialog(null, "Số lượng phải là số dương!");
-                            return;
-                        }
-                        JOptionPane.showMessageDialog(null, "Số lượng phải là số!");
-                        return;
-                    }
-                    int result = JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn thêm phiên bản sản phẩm này không?", "Lựa chọn", JOptionPane.YES_NO_OPTION);
-                    if(result == JOptionPane.YES_OPTION){
-                        try {
-                            String maSP = sanPhamUI.getTxtDialogMaSanPham().getText();
-                            String mauSac = sanPhamUI.getCbDialogMauSac().getSelectedItem().toString();
-                            String kichThuoc = sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString();
-                            String maPhienBan = phatSinhMaPBSP(maSP, mauSac, kichThuoc);
-                            ChiTietPhienBanSanPham chiTietPhienBanSanPham = new ChiTietPhienBanSanPham(maPhienBan, sanPhamDAO.timKiem(maSP), MauSac.layGiaTri(mauSac), kichThuoc, Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()), fileAnh);
-                            if(chiTietPhienBanSanPhamDAO.them(chiTietPhienBanSanPham)){
-                                JOptionPane.showMessageDialog(null, "Thêm thành công!");
-                                loadTTPBSP();
-                                xoaTrangPBSP(false);
-                                trangThaiNutThemPBSP = 0;
-                                sanPhamUI.getBtnDialogThemXuong().setText("Thêm xuống");
-                                loadTTPBSP();
-
-                            }else{
-                                JOptionPane.showMessageDialog(null, "Thêm thất bại!");
-                            }
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
+            if (trangThaiNutThem == 1) {
+                if (sanPhamUI.getCbDialogMauSac().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn màu sắc!");
+                    return;
                 }
-            }else if(trangThaiNutThem == 1){
-                SanPham sp = layDataThem();
-                if(trangThaiNutThemPBSP==0) {
+                if (sanPhamUI.getTxtDialogSoLuong().getText().equalsIgnoreCase("")) {
+                    JOptionPane.showMessageDialog(null, "Vui lòng nhập số lượng!");
+                    return;
+                }
+                if (sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn kích thước!");
+                    return;
+                }
+                if (fileAnh.equalsIgnoreCase("")) {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn hình ảnh!");
+                    return;
+                }
+                if (!sanPhamUI.getTxtDialogSoLuong().getText().matches("\\d+")) {
+                    if (Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()) < 0) {
+                        JOptionPane.showMessageDialog(null, "Số lượng phải là số dương!");
+                        return;
+                    }
+                    JOptionPane.showMessageDialog(null, "Số lượng phải là số!");
+                    return;
+                }
+                if (dsChiTietPhienBanSanPham.isEmpty()) {
+                    try {
+                        String maSP = sanPhamUI.getTxtDialogMaSanPham().getText();
+                        String mauSac = sanPhamUI.getCbDialogMauSac().getSelectedItem().toString();
+                        String kichThuoc = sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString();
+                        String maPhienBan = phatSinhMaPBSP(maSP, mauSac, kichThuoc);
+                        ChiTietPhienBanSanPham chiTietPhienBanSanPham = new ChiTietPhienBanSanPham(maPhienBan, sp, MauSac.layGiaTri(mauSac), kichThuoc, Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()), fileAnh);
+                        dsChiTietPhienBanSanPham.add(chiTietPhienBanSanPham);
+                        String[] row = {mauSac, kichThuoc, sanPhamUI.getTxtDialogSoLuong().getText(), null};
+                        tmChiTietPhienBanSanPham.addRow(row);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
                     xoaTrangPBSP(true);
-                    trangThaiNutThemPBSP = 1;
-                    sanPhamUI.getBtnDialogThemXuong().setText("Xác nhận thêm");
-                }else {
-                    if (sanPhamUI.getCbDialogMauSac().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn màu sắc!");
-                        return;
-                    }
-                    if (sanPhamUI.getTxtDialogSoLuong().getText().equalsIgnoreCase("")) {
-                        JOptionPane.showMessageDialog(null, "Vui lòng nhập số lượng!");
-                        return;
-                    }
-                    if (sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn kích thước!");
-                        return;
-                    }
-                    if (fileAnh.equalsIgnoreCase("")) {
-                        JOptionPane.showMessageDialog(null, "Vui lòng chọn hình ảnh!");
-                        return;
-                    }
-                    if (!sanPhamUI.getTxtDialogSoLuong().getText().matches("\\d+")) {
-                        if (Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()) < 0) {
-                            JOptionPane.showMessageDialog(null, "Số lượng phải là số dương!");
+                } else {
+                    for (ChiTietPhienBanSanPham ct : dsChiTietPhienBanSanPham) {
+                        if (ct.getMauSac().toString().equalsIgnoreCase(sanPhamUI.getCbDialogMauSac().getSelectedItem().toString()) && ct.getKichThuoc().equalsIgnoreCase(sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString())) {
+                            JOptionPane.showMessageDialog(null, "Phiên bản sản phẩm đã tồn tại!");
                             return;
                         }
-                        JOptionPane.showMessageDialog(null, "Số lượng phải là số!");
-                        return;
                     }
-                    int result = JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn thêm phiên bản sản phẩm này không?", "Lựa chọn", JOptionPane.YES_NO_OPTION);
-                    if (result == JOptionPane.YES_OPTION) {
-                        try {
-                            DefaultTableModel tmPBSP = (DefaultTableModel) sanPhamUI.getTbDialogDanhSachCacSanPham().getModel();
-                            String maSP = sanPhamUI.getTxtDialogMaSanPham().getText();
-                            String mauSac = sanPhamUI.getCbDialogMauSac().getSelectedItem().toString();
-                            String kichThuoc = sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString();
-                            String maPhienBan = phatSinhMaPBSP(maSP, mauSac, kichThuoc);
-                            ChiTietPhienBanSanPham chiTietPhienBanSanPham = new ChiTietPhienBanSanPham(maPhienBan, sp, MauSac.layGiaTri(mauSac), kichThuoc, Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()), fileAnh);
-                            listCTPBSP.add(chiTietPhienBanSanPham);
-                            tmPBSP.addRow(new String[]{maPhienBan, mauSac, kichThuoc, sanPhamUI.getTxtDialogSoLuong().getText(), null});
-                            trangThaiNutThemPBSP = 0;
-                            sanPhamUI.getBtnDialogThemXuong().setText("Thêm xuống");
-                            xoaTrangPBSP(false);
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
-                        }
+                    try {
+                        String maSP = sanPhamUI.getTxtDialogMaSanPham().getText();
+                        String mauSac = sanPhamUI.getCbDialogMauSac().getSelectedItem().toString();
+                        String kichThuoc = sanPhamUI.getCbDialogKichThuoc().getSelectedItem().toString();
+                        String maPhienBan = phatSinhMaPBSP(maSP, mauSac, kichThuoc);
+                        ChiTietPhienBanSanPham chiTietPhienBanSanPham = new ChiTietPhienBanSanPham(maPhienBan, sp, MauSac.layGiaTri(mauSac), kichThuoc, Integer.parseInt(sanPhamUI.getTxtDialogSoLuong().getText()), fileAnh);
+                        dsChiTietPhienBanSanPham.add(chiTietPhienBanSanPham);
+                        String[] row = {mauSac, kichThuoc, sanPhamUI.getTxtDialogSoLuong().getText(), null};
+                        tmChiTietPhienBanSanPham.addRow(row);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    xoaTrangPBSP(true);
+                }
+            }
+        }
+
+        /*NUT XONG*/
+        if (e.getSource().equals(sanPhamUI.getBtnDialogXong())) {
+            if (trangThaiNutThem == 0 && trangThaiNutThemPBSP == 0) {
+                anHienWinPBSP(false);
+            } else if (trangThaiNutThem == 1) {
+                int result = JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn thêm phiên bản sản phẩm này không?", "Lựa chọn", JOptionPane.YES_NO_OPTION);
+                if (result == JOptionPane.YES_OPTION) {
+                    try {
+//                        for (ChiTietPhienBanSanPham ct : listCTPBSP) {
+//                            chiTietPhienBanSanPhamDAO.them(ct);
+//                            String data = ct.getMaPhienBanSP();
+//                            String path = "src/main/resources/MaQRSanPham/" + ct.getMaPhienBanSP() + ".jpg";
+//
+//                            BitMatrix matrix = new MultiFormatWriter()
+//                                    .encode(data, BarcodeFormat.QR_CODE, 500, 500);
+//
+//                            MatrixToImageWriter.writeToPath(matrix, "jpg", Paths.get(path));
+//                        }
+//                        loadDsSanPham();
+//                        JOptionPane.showMessageDialog(null, "Thêm thành công!");
+//                        listCTPBSP.clear();
+                        anHienWinPBSP(false);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
                     }
                 }
             }
-
-        }
-        if(op.equals(sanPhamUI.getBtnDialogXong())){
-            anHienWinPBSP(false);
         }
         /*NÚT XÓA*/
         if (op == sanPhamUI.getButtonXoa()) {
             // Thực hiện chức năng nghiệp vụ xóa sản phẩm
-            if (trangThaiNutXoa==0) {
+            if (trangThaiNutXoa == 0) {
                 if (sanPhamUI.getTxtMaSanPham().getText().equals("")) {
                     JOptionPane.showMessageDialog(null, "Vui lòng chọn sản phẩm cần xóa!");
                 } else {
@@ -506,11 +529,11 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                             "Bạn có chắc muốn ngừng bán sản phẩm có mã " + sanPhamUI.getTxtMaSanPham().getText() + " không?", "Lựa chọn",
                             JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
                         try {
-                            if (sanPhamDAO.xoa(ma)){
+                            if (sanPhamDAO.xoa(ma)) {
                                 loadDsSanPham();
                                 xoaTrangAll();
                                 JOptionPane.showMessageDialog(null, "Xóa thành công!");
-                            }else {
+                            } else {
                                 JOptionPane.showMessageDialog(null, "Xóa thất bại!");
                             }
                         } catch (Exception e1) {
@@ -520,31 +543,32 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 }
             }
             // Thực hiện trả các nút về giao diện quản lý sản phẩm
-            else if(trangThaiNutXoa==1) {
+            else if (trangThaiNutXoa == 1) {
                 tuongTac(false);
                 tuongTacTimKiem(true);
                 xoaTrangAll();
                 sanPhamUI.getButtonThem().setText("Thêm sản phẩm");
                 sanPhamUI.getButtonSua().setText("Sửa sản phẩm");
                 sanPhamUI.getButtonXoa().setText("Xóa sản phẩm");
-                trangThaiNutXoa = 0;
+                /*            trangThaiNutXoa = 0;*/
                 trangThaiNutThem = 0;
                 trangThaiNutSua = 0;
+                return;
             }
         }
         /*LỌC SẢN PHẨM*/
         if (op.equals(sanPhamUI.getCbTkDanhMuc()) ||
                 op.equals(sanPhamUI.getCbTkLoaiSanPham()) || op.equals(sanPhamUI.getCbTkTinhTrang()) ||
                 op.equals(sanPhamUI.getCbTkThuongHieu()) || op.equals(sanPhamUI.getCbTkDoTuoi()) ||
-                op.equals(sanPhamUI.getCbTkPhongCachMac())){
+                op.equals(sanPhamUI.getCbTkPhongCachMac())) {
             dsTim = new ArrayList<>();
             List<DanhMucSanPham> dsDanhMucTim;
             List<LoaiSanPham> dsLoaiTim;
             List<ThuongHieu> dsThuongHieuTim;
             //Lọc tuần tự từ trái sang phải
-            if(!sanPhamUI.getCbTkDanhMuc().getSelectedItem().toString().equals("--Danh mục--")){
+            if (!sanPhamUI.getCbTkDanhMuc().getSelectedItem().toString().equals("--Danh mục--")) {
                 Map<String, Object> conditionsDanhMuc = new HashMap<>();
-                conditionsDanhMuc.put("TenDM", sanPhamUI.getCbTkDanhMuc().getSelectedItem().toString());
+                conditionsDanhMuc.put("tenDM", sanPhamUI.getCbTkDanhMuc().getSelectedItem().toString());
                 try {
                     dsDanhMucTim = danhMucSanPhamDAO.timKiem(conditionsDanhMuc);
                 } catch (Exception ex) {
@@ -552,67 +576,185 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 }
                 //
                 Map<String, Object> conditionsLoai = new HashMap<>();
-                conditionsLoai.put("MaDM", dsDanhMucTim.get(0).getMaDM());
+                conditionsLoai.put("danhMucSanPham.maDM", dsDanhMucTim.get(0).getMaDM());
                 try {
                     dsLoaiTim = loaiSanPhamDAO.timKiem(conditionsLoai);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
                 //
-                for(int i=0; i<dsLoaiTim.size(); i++){
+                for (int i = 0; i < dsLoaiTim.size(); i++) {
                     Map<String, Object> conditionsSp = new HashMap<>();
-                    conditionsSp.put("MaLoai", dsLoaiTim.get(i).getMaLoai());
+                    conditionsSp.put("loaiSanPham.maLoai", dsLoaiTim.get(i).getMaLoai());
                     try {
                         dsTim.addAll(sanPhamDAO.timKiem(conditionsSp));
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                if(!sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals("--Loại--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals(dsTim.get(i).getLoaiSanPham().getTenLoai())){
+                if (!sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals("--Loại--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals(dsTim.get(i).getLoaiSanPham().getTenLoai())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())){
+                    if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                        if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
-                            if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                            if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                         dsTam.add(dsTim.get(i));
                                     }
                                 }
                                 dsTim = dsTam;
                                 dsTam = new ArrayList<>();
-                                if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                                    for(int i=0; i<dsTim.size(); i++){
-                                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                                if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                    for (int i = 0; i < dsTim.size(); i++) {
+                                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                             dsTam.add(dsTim.get(i));
                                         }
                                     }
                                     dsTim = dsTam;
                                     dsTam = new ArrayList<>();
                                 }
+                            } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                        dsTam.add(dsTim.get(i));
+                                    }
+                                }
+                                dsTim = dsTam;
+                                dsTam = new ArrayList<>();
                             }
-                            else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                            if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                        dsTam.add(dsTim.get(i));
+                                    }
+                                }
+                                dsTim = dsTam;
+                                dsTam = new ArrayList<>();
+                            }
+                        } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                        }
+                    } else if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
+                                dsTam.add(dsTim.get(i));
+                            }
+                        }
+                        dsTim = dsTam;
+                        dsTam = new ArrayList<>();
+                        if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                            if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                        dsTam.add(dsTim.get(i));
+                                    }
+                                }
+                                dsTim = dsTam;
+                                dsTam = new ArrayList<>();
+                            }
+                        } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                        }
+                    } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
+                                dsTam.add(dsTim.get(i));
+                            }
+                        }
+                        dsTim = dsTam;
+                        dsTam = new ArrayList<>();
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                        }
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                dsTam.add(dsTim.get(i));
+                            }
+                        }
+                        dsTim = dsTam;
+                        dsTam = new ArrayList<>();
+                    }
+                } else if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())) {
+                            dsTam.add(dsTim.get(i));
+                        }
+                    }
+                    dsTim = dsTam;
+                    dsTam = new ArrayList<>();
+                    if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
+                                dsTam.add(dsTim.get(i));
+                            }
+                        }
+                        dsTim = dsTam;
+                        dsTam = new ArrayList<>();
+                        if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
+                                    dsTam.add(dsTim.get(i));
+                                }
+                            }
+                            dsTim = dsTam;
+                            dsTam = new ArrayList<>();
+                            if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                         dsTam.add(dsTim.get(i));
                                     }
                                 }
@@ -620,463 +762,319 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                                 dsTam = new ArrayList<>();
                             }
                         }
-                        else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                            if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                        dsTam.add(dsTim.get(i));
-                                    }
-                                }
-                                dsTim = dsTam;
-                                dsTam = new ArrayList<>();
-                            }
-                        }
-                        else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                        }
-                    }
-                    else if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                    } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                            if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                        dsTam.add(dsTim.get(i));
-                                    }
-                                }
-                                dsTim = dsTam;
-                                dsTam = new ArrayList<>();
-                            }
-                        }
-                        else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                dsTam.add(dsTim.get(i));
-                            }
-                        }
-                        dsTim = dsTam;
-                        dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                        }
-                    }
-                    else if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if(!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())){
+                } else if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                    if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                            if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                        dsTam.add(dsTim.get(i));
-                                    }
-                                }
-                                dsTim = dsTam;
-                                dsTam = new ArrayList<>();
-                            }
-                        }
-                    }
-                    else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                dsTam.add(dsTim.get(i));
-                            }
-                        }
-                        dsTim = dsTam;
-                        dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                                dsTam.add(dsTim.get(i));
-                            }
-                        }
-                        dsTim = dsTam;
-                        dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                    dsTam.add(dsTim.get(i));
-                                }
-                            }
-                            dsTim = dsTam;
-                            dsTam = new ArrayList<>();
-                        }
-                    }
-                    else if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
-                            dsTam.add(dsTim.get(i));
-                        }
-                    }
-                    dsTim = dsTam;
-                    dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                dsTam.add(dsTim.get(i));
-                            }
-                        }
-                        dsTim = dsTam;
-                        dsTam = new ArrayList<>();
-                    }
-                }
-                else if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
                 }
-            }
-            else if(!sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals("--Loại--")){
+            } else if (!sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString().equals("--Loại--")) {
                 Map<String, Object> conditionsLoai = new HashMap<>();
-                conditionsLoai.put("TenLoai", sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString());
+                conditionsLoai.put("tenLoai", sanPhamUI.getCbTkLoaiSanPham().getSelectedItem().toString());
                 try {
                     dsLoaiTim = loaiSanPhamDAO.timKiem(conditionsLoai);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
                 //
-                for(int i=0; i<dsLoaiTim.size(); i++){
+                for (int i = 0; i < dsLoaiTim.size(); i++) {
                     Map<String, Object> conditionsSp = new HashMap<>();
-                    conditionsSp.put("MaLoai", dsLoaiTim.get(i).getMaLoai());
+                    conditionsSp.put("loaiSanPham.maLoai", dsLoaiTim.get(i).getMaLoai());
                     try {
                         dsTim.addAll(sanPhamDAO.timKiem(conditionsSp));
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())){
+                if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals(dsTim.get(i).getTinhTrang().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                    if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                        if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
-                            if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                                for(int i=0; i<dsTim.size(); i++){
-                                    if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                            if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                                for (int i = 0; i < dsTim.size(); i++) {
+                                    if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                         dsTam.add(dsTim.get(i));
                                     }
                                 }
                                 dsTim = dsTam;
                                 dsTam = new ArrayList<>();
                             }
-                        }
-                        else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                    } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                } else if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                    if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
+                                dsTam.add(dsTim.get(i));
+                            }
+                        }
+                        dsTim = dsTam;
+                        dsTam = new ArrayList<>();
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                    else if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
-                                dsTam.add(dsTim.get(i));
-                            }
-                        }
-                        dsTim = dsTam;
-                        dsTam = new ArrayList<>();
-                    }
-                }
-                else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
                 }
-            }
-            else if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")) {
+            } else if (!sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString().equals("--Tình trạng--")) {
                 Map<String, Object> conditionsTinhTrang = new HashMap<>();
-                conditionsTinhTrang.put("TinhTrang", sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString());
+                String tt = sanPhamUI.getCbTkTinhTrang().getSelectedItem().toString();
+                TinhTrangSanPham value = TinhTrangSanPham.layGiaTri(tt);
+                conditionsTinhTrang.put("tinhTrang", value);
                 try {
                     dsTim = sanPhamDAO.timKiem(conditionsTinhTrang);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-                if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())){
+                if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals(dsTim.get(i).getThuongHieu().getTenTH())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                    if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
-                        if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                            for(int i=0; i<dsTim.size(); i++){
-                                if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                        if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                            for (int i = 0; i < dsTim.size(); i++) {
+                                if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                     dsTam.add(dsTim.get(i));
                                 }
                             }
                             dsTim = dsTam;
                             dsTam = new ArrayList<>();
                         }
-                    }
-                    else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
                 }
-            }
-            else if(!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")){
+            } else if (!sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString().equals("--Thương hiệu--")) {
                 Map<String, Object> conditionsTenThuongHieu = new HashMap<>();
-                conditionsTenThuongHieu.put("TenTH", sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString());
+                conditionsTenThuongHieu.put("tenTH", sanPhamUI.getCbTkThuongHieu().getSelectedItem().toString());
                 try {
                     dsThuongHieuTim = thuongHieuDAO.timKiem(conditionsTenThuongHieu);
                 } catch (Exception ex) {
@@ -1084,70 +1082,69 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 }
                 //
                 Map<String, Object> conditionsSanPham = new HashMap<>();
-                conditionsSanPham.put("MaTH", dsThuongHieuTim.get(0).getMaTH());
+                conditionsSanPham.put("thuongHieu.maTH", dsThuongHieuTim.get(0).getMaTH());
                 try {
                     dsTim = sanPhamDAO.timKiem(conditionsSanPham);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-                if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())){
+                if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals(dsTim.get(i).getDoTuoi().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                        for(int i=0; i<dsTim.size(); i++){
-                            if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                    if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                        for (int i = 0; i < dsTim.size(); i++) {
+                            if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                                 dsTam.add(dsTim.get(i));
                             }
                         }
                         dsTim = dsTam;
                         dsTam = new ArrayList<>();
                     }
-                }
-                else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
                 }
-            }
-            else if(!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")){
+            } else if (!sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString().equals("--Độ tuổi--")) {
                 Map<String, Object> conditionsDoTuoi = new HashMap<>();
-                conditionsDoTuoi.put("DoTuoi", sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString());
+                String te = sanPhamUI.getCbTkDoTuoi().getSelectedItem().toString();
+                DoTuoi dt = DoTuoi.layGiaTri(te);
+                conditionsDoTuoi.put("doTuoi", dt);
                 try {
                     dsTim = sanPhamDAO.timKiem(conditionsDoTuoi);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-                if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
-                    for(int i=0; i<dsTim.size(); i++){
-                        if(sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())){
+                if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
+                    for (int i = 0; i < dsTim.size(); i++) {
+                        if (sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals(dsTim.get(i).getPhongCachMac().toString())) {
                             dsTam.add(dsTim.get(i));
                         }
                     }
                     dsTim = dsTam;
                     dsTam = new ArrayList<>();
-                    System.out.println(1);
                 }
-            }
-            else if(!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")){
+            } else if (!sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString().equals("--Phong cách--")) {
 
                 Map<String, Object> conditionsPhongCach = new HashMap<>();
-                conditionsPhongCach.put("PhongCachMac", sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString());
+                String te = sanPhamUI.getCbTkPhongCachMac().getSelectedItem().toString();
+                PhongCachMac pcm = PhongCachMac.layGiaTri(te);
+                conditionsPhongCach.put("phongCachMac", pcm);
                 try {
                     dsTim = sanPhamDAO.timKiem(conditionsPhongCach);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-            }
-            else {
+            } else {
                 try {
                     dsTim = sanPhamDAO.timKiem();
                 } catch (Exception ex) {
@@ -1161,14 +1158,14 @@ public class ProductController implements ActionListener, MouseListener, KeyList
             sanPhamUI.getTbDanhSachSanPham().setModel(clearTable);
 
             DefaultTableModel tmSanPham = (DefaultTableModel) sanPhamUI.getTbDanhSachSanPham().getModel();
-            for(SanPham sp : dsTim){
-                String[] row = {sp.getMaSP(), sp.getTenSP(), sp.getLoaiSanPham().getDanhMucSanPham().getTenDM(), sp.getLoaiSanPham().getTenLoai(), sp.getPhongCachMac()+"", sp.getThuongHieu().getTenTH(),sp.getDoTuoi().toString() , sp.getTinhTrang()+""};
+            for (SanPham sp : dsTim) {
+                String[] row = {sp.getMaSP(), sp.getTenSP(), sp.getLoaiSanPham().getDanhMucSanPham().getTenDM(), sp.getLoaiSanPham().getTenLoai(), sp.getPhongCachMac() + "", sp.getThuongHieu().getTenTH(), sp.getDoTuoi().toString(), sp.getTinhTrang() + ""};
                 tmSanPham.addRow(row);
             }
         }
 
         /*NÚT LẤY ẢNH TỪ MÁY*/
-        if(op.equals(sanPhamUI.getBtnDialogAnh())){
+        if (op.equals(sanPhamUI.getBtnDialogAnh())) {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setFileFilter(new FileNameExtensionFilter("Hình ảnh", "jpg", "jpeg", "png"));
             int result = fileChooser.showOpenDialog(null);
@@ -1177,8 +1174,8 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 File selectedFile = fileChooser.getSelectedFile();
                 // Lấy tên file và đuôi file
                 fileAnh = selectedFile.getName();
-                URL path = getClass().getResource("/img/imgSanPham/"+fileAnh);
-                if(path==null){
+                URL path = getClass().getResource("/img/imgSanPham/" + fileAnh);
+                if (path == null) {
                     path = getClass().getResource("/img/imgSanPham/Image_not_available.png");
                 }
 
@@ -1189,12 +1186,13 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 JLabel picLabel = new JLabel();
                 sanPhamUI.getPnDialogAnh().removeAll();
                 sanPhamUI.getPnDialogAnh().add(picLabel);
-                picLabel.setSize(new Dimension(240,320));
+                picLabel.setSize(new Dimension(240, 320));
                 picLabel.setIcon(icon);
             }
         }
     }
-    public void xoaTrangPBSP(boolean o){
+
+    public void xoaTrangPBSP(boolean o) {
         sanPhamUI.getCbDialogKichThuoc().setEnabled(o);
         sanPhamUI.getCbDialogKichThuoc().setSelectedItem("--Select--");
         sanPhamUI.getCbDialogMauSac().setEnabled(o);
@@ -1206,16 +1204,19 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         sanPhamUI.getPnDialogAnh().revalidate();
         sanPhamUI.getPnDialogAnh().removeAll();
     }
-    public String phatSinhMaPBSP(String maSP, String mauSac, String kichThuoc){
+
+    public String phatSinhMaPBSP(String maSP, String mauSac, String kichThuoc) {
         String ma = "";
 
-        ma = maSP+"-"+mauSac+"-"+kichThuoc;
+        ma = maSP + "-" + mauSac + "-" + kichThuoc;
         return ma;
     }
-    private void anHienWinPBSP(boolean o){
+
+    private void anHienWinPBSP(boolean o) {
         sanPhamUI.getWinThemPBSP().setLocationRelativeTo(null);
         sanPhamUI.getWinThemPBSP().setVisible(o);
     }
+
     //Hàm lấy sản phẩm từ phần thông tin sản phẩm
     private SanPham layDataThem() {
         SanPham sp = null;
@@ -1230,12 +1231,12 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         // Chuyển đổi từ Date sang LocalDate
 
         LocalDate localDate = dateToLocalDate(selectedDate);
-        if(localDate.isAfter(LocalDate.now())){
+        if (localDate.isAfter(LocalDate.now())) {
             JOptionPane.showMessageDialog(null, "Ngày sản xuất không được lớn hơn ngày hiện tại");
             return null;
         }
         String xuatXu = sanPhamUI.getTxtXuatXu().getText();
-        if(sanPhamUI.getCbDoTuoi().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+        if (sanPhamUI.getCbDoTuoi().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
             JOptionPane.showMessageDialog(null, "Vui lòng chọn độ tuổi");
             return null;
         }
@@ -1244,45 +1245,45 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         List<LoaiSanPham> loaiSanPhams = new ArrayList<>();
         List<ThuongHieu> thuongHieu = new ArrayList<>();
         try {
-            if(sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+            if (sanPhamUI.getCbLoai().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
                 JOptionPane.showMessageDialog(null, "Vui lòng chọn loại sản phẩm");
                 return null;
             }
             Map<String, Object> loai = new HashMap<>();
-            loai.put("TenLoai", sanPhamUI.getCbLoai().getSelectedItem().toString());
+            loai.put("tenLoai", sanPhamUI.getCbLoai().getSelectedItem().toString());
             loaiSanPhams = loaiSanPhamDAO.timKiem(loai);
 
-            if(sanPhamUI.getDanhMuc().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+            if (sanPhamUI.getDanhMuc().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
                 JOptionPane.showMessageDialog(null, "Vui lòng chọn danh mục");
                 return null;
             }
             Map<String, Object> dm = new HashMap<>();
-            dm.put("TenDM", sanPhamUI.getDanhMuc().getSelectedItem().toString());
+            dm.put("tenDM", sanPhamUI.getDanhMuc().getSelectedItem().toString());
             danhMucs = danhMucSanPhamDAO.timKiem(dm);
 
-            if(sanPhamUI.getCbThuongHieu().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+            if (sanPhamUI.getCbThuongHieu().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
                 JOptionPane.showMessageDialog(null, "Vui lòng chọn thương hiệu");
                 return null;
             }
             Map<String, Object> th = new HashMap<>();
-            th.put("TenTH", sanPhamUI.getCbThuongHieu().getSelectedItem().toString());
+            th.put("tenTH", sanPhamUI.getCbThuongHieu().getSelectedItem().toString());
             thuongHieu = thuongHieuDAO.timKiem(th);
 
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
         float ptl = 0;
-        if(sanPhamUI.getTxtPhamTramLoi().getText().matches("\\d+")){
+        if (sanPhamUI.getTxtPhamTramLoi().getText().matches("\\d+")) {
             ptl = Float.parseFloat(sanPhamUI.getTxtPhamTramLoi().getText());
-            if(ptl<0){
+            if (ptl < 0) {
                 JOptionPane.showMessageDialog(null, "Phần trăm lời không được lớn hơn 0");
                 return null;
             }
-        }else{
+        } else {
             JOptionPane.showMessageDialog(null, "Phần trăm lời phải là số");
             return null;
         }
-        if(sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+        if (sanPhamUI.getCbKieuNguoiMac().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
             JOptionPane.showMessageDialog(null, "Vui lòng chọn kiểu người mặc");
             return null;
         }
@@ -1290,7 +1291,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
 
         //Hình ảnh
         String anh = fileAnh;
-        if(sanPhamUI.getCbTinhTrang().getSelectedItem().toString().equalsIgnoreCase("--Select--")){
+        if (sanPhamUI.getCbTinhTrang().getSelectedItem().toString().equalsIgnoreCase("--Select--")) {
             JOptionPane.showMessageDialog(null, "Vui lòng chọn tình trạng sản phẩm");
             return null;
         }
@@ -1298,15 +1299,15 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         //Mã sản phẩm
 
         Map<String, Object> conditions = new HashMap<>();
-        conditions.put("HieuLuc", "CO");
+        conditions.put("hieuLuc", "%false%");
         List<Thue> thue;
         try {
-           thue = thueDAO.timKiem(conditions);
+            thue = thueDAO.timKiem(conditions);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         try {
-            sp = new SanPham(sanPhamUI.getTxtMaSanPham().getText(),ten,loaiSanPhams.get(0),pcm,doTuoi,xuatXu,thuongHieu.get(0),ptl,localDate,thue.get(0),tt);
+            sp = new SanPham(sanPhamUI.getTxtMaSanPham().getText(), ten, loaiSanPhams.get(0), pcm, doTuoi, xuatXu, thuongHieu.get(0), ptl, localDate, thue.get(0), tt);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1331,17 +1332,16 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         List<ThuongHieu> thuongHieu = new ArrayList<>();
         try {
             Map<String, Object> dm = new HashMap<>();
-            dm.put("TenDM", sanPhamUI.getDanhMuc().getSelectedItem().toString());
+            dm.put("tenDM", sanPhamUI.getDanhMuc().getSelectedItem().toString());
             danhMucs = danhMucSanPhamDAO.timKiem(dm);
 
 
-
             Map<String, Object> loai = new HashMap<>();
-            loai.put("TenLoai", sanPhamUI.getCbLoai().getSelectedItem().toString());
+            loai.put("tenLoai", sanPhamUI.getCbLoai().getSelectedItem().toString());
             loaiSanPhams = loaiSanPhamDAO.timKiem(loai);
 
             Map<String, Object> th = new HashMap<>();
-            th.put("TenTH", sanPhamUI.getCbThuongHieu().getSelectedItem().toString());
+            th.put("tenTH", sanPhamUI.getCbThuongHieu().getSelectedItem().toString());
             thuongHieu = thuongHieuDAO.timKiem(th);
 
         } catch (Exception ex) {
@@ -1358,7 +1358,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         TinhTrangSanPham tt = TinhTrangSanPham.layGiaTri(sanPhamUI.getCbTinhTrang().getSelectedItem().toString());
 //        int soLuong = Integer.parseInt(sanPhamUI.getTxtSoLuongSanPham().getText());
         Map<String, Object> conditions = new HashMap<>();
-        conditions.put("HieuLuc", "CO");
+        conditions.put("hieuLuc", "%false%");
         List<Thue> thue;
         try {
             thue = thueDAO.timKiem(conditions);
@@ -1368,7 +1368,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         //Mã sản phẩm
         String ma = sanPhamUI.getTxtMaSanPham().getText();
         try {
-            sps = new SanPham(ma,ten,loaiSanPhams.get(0),pcm,doTuoi,xuatXu,thuongHieu.get(0),ptl,localDate,thue.get(0),tt);
+            sps = new SanPham(ma, ten, loaiSanPhams.get(0), pcm, doTuoi, xuatXu, thuongHieu.get(0), ptl, localDate, thue.get(0), tt);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1377,24 +1377,24 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     }
 
     //Hàm sinh mã sản phẩm
-    public String laymaSP(){
+    public String laymaSP() {
         Map<String, Object> conditions = new HashMap<>();
-        conditions.put("MaSP", maLoai);
-        String[] cols = {"MaSP"};
+        conditions.put("maSP", maLoai);
+        String[] cols = {"maSP", "tenSP"};
         List<Map<String, Object>> dsMaSP = null;
         String maSP = "";
         ArrayList<Integer> ma = new ArrayList<>();
         try {
             dsMaSP = sanPhamDAO.timKiem(conditions, false, cols);
             for (int i = 0; i < dsMaSP.size(); i++) {
-                ma.add(Integer.parseInt(dsMaSP.get(i).get("MaSP").toString().substring(dsMaSP.get(i).get("MaSP").toString().length()-3)));
+                ma.add(Integer.parseInt(dsMaSP.get(i).get("maSP").toString().substring(dsMaSP.get(i).get("maSP").toString().length() - 3)));
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
         int max = 0;
-        for(int i=0; i<ma.size(); i++){
-            if(max < ma.get(i)){
+        for (int i = 0; i < ma.size(); i++) {
+            if (max < ma.get(i)) {
                 max = ma.get(i);
             }
         }
@@ -1403,12 +1403,13 @@ public class ProductController implements ActionListener, MouseListener, KeyList
 //        String mau = sanPhamUI.getCbMauSac().getSelectedItem().toString();
 //        maSP = maSP + mau + "-";
 //        maSP = maSP + sanPhamUI.getTxtKichThuoc().getText();
-        return formatNumber(max+1);
+        return formatNumber(max + 1);
     }
+
     public String formatNumber(int number) {
-        if(number < 10)
+        if (number < 10)
             return String.format("00%d", number);
-        else if((number >= 10) && (number < 100))
+        else if ((number >= 10) && (number < 100))
             return String.format("0%d", number);
         else
             return String.format("%d", number);
@@ -1436,7 +1437,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     }
 
     //Hàm xóa trắng dữ liệu nhập
-    public void xoaTrangAll(){
+    public void xoaTrangAll() {
         loadComboBoxPhanThongTinSP();
         sanPhamUI.getTxtMaSanPham().setText("");
         sanPhamUI.getTxtTenSanPham().setText("");
@@ -1446,25 +1447,26 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     }
 
     //Xóa trắng khi sửa
-    public void xoaTrangSua(){
+    public void xoaTrangSua() {
         loadComboBoxPhanThongTinSP();
         sanPhamUI.getTxtTenSanPham().setText("");
         sanPhamUI.getJDateChooserNgaySanXuat().setDate(null);
         sanPhamUI.getTxtXuatXu().setText("");
         sanPhamUI.getTxtPhamTramLoi().setText("");
     }
-    public void loadTTPBSP(){
+
+    public void loadTTPBSP() {
         String maSP = sanPhamUI.getTxtMaSanPham().getText();
-        String[] cols = {"MauSac", "KichThuoc", "HinhAnh", "SoLuong"};
-        Map<String, Object> condintions=  new HashMap<>();
+        String[] cols = {"mauSac", "kichThuoc", "hinhAnh", "soLuong"};
+        Map<String, Object> condintions = new HashMap<>();
         sanPhamUI.getTxtDialogMaSanPham().setText(maSP);
-        condintions.put("MaSP", maSP);
+        condintions.put("sanPham.maSP", maSP);
         try {
             List<Map<String, Object>> listCTPBSP = chiTietPhienBanSanPhamDAO.timKiem(condintions, false, cols);
             DefaultTableModel tmCTPBSP = (DefaultTableModel) sanPhamUI.getTbDialogDanhSachCacSanPham().getModel();
             tmCTPBSP.setRowCount(0);
-            for(Map<String, Object> map : listCTPBSP){
-                String[] row = {map.get("MauSac").toString(), map.get("KichThuoc").toString(), map.get("SoLuong").toString(),null};
+            for (Map<String, Object> map : listCTPBSP) {
+                String[] row = {map.get("mauSac").toString(), map.get("kichThuoc").toString(), map.get("soLuong").toString(), null};
                 tmCTPBSP.addRow(row);
             }
         } catch (Exception e) {
@@ -1472,24 +1474,26 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         }
 
     }
-    public void importAnh(String url){
-        URL path = getClass().getResource("/img/imgSanPham/"+url);
-                if(path==null){
-                    path = getClass().getResource("/img/imgSanPham/Image_not_available.png");
-                }
 
-                ImageIcon iconGoc = new ImageIcon(path);
-                Image anh = iconGoc.getImage();
-                Image tinhChinhAnh = anh.getScaledInstance(200, 320, Image.SCALE_SMOOTH);
-                ImageIcon icon = new ImageIcon(tinhChinhAnh);
-                JLabel picLabel = new JLabel();
-                sanPhamUI.getPnDialogAnh().removeAll();
-                sanPhamUI.getPnDialogAnh().add(picLabel);
-                picLabel.setSize(new Dimension(240,320));
-                picLabel.setIcon(icon);
+    public void importAnh(String url) {
+        URL path = getClass().getResource("/img/imgSanPham/" + url);
+        if (path == null) {
+            path = getClass().getResource("/img/imgSanPham/Image_not_available.png");
+        }
+
+        ImageIcon iconGoc = new ImageIcon(path);
+        Image anh = iconGoc.getImage();
+        Image tinhChinhAnh = anh.getScaledInstance(200, 320, Image.SCALE_SMOOTH);
+        ImageIcon icon = new ImageIcon(tinhChinhAnh);
+        JLabel picLabel = new JLabel();
+        sanPhamUI.getPnDialogAnh().removeAll();
+        sanPhamUI.getPnDialogAnh().add(picLabel);
+        picLabel.setSize(new Dimension(240, 320));
+        picLabel.setIcon(icon);
     }
+
     //Load các comboBox phần thông tin
-    public void loadComboBoxPhanThongTinSP(){
+    public void loadComboBoxPhanThongTinSP() {
         //Lấy độ tuổi từ enum
         DoTuoi[] dsDoTuoi = DoTuoi.values();
         String[] itemsDoTuoi = new String[dsDoTuoi.length + 1];
@@ -1559,8 +1563,9 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         DefaultComboBoxModel<String> thuongHieuComboBoxModel = new DefaultComboBoxModel<>(itemsThuongHieu);
         sanPhamUI.getCbThuongHieu().setModel(thuongHieuComboBoxModel);
     }
+
     //Load cac comboBox phan thong tin phien ban san pham
-    public void loadComboBoxPhanThongTinPhienBanSP(){
+    public void loadComboBoxPhanThongTinPhienBanSP() {
 
         MauSac[] dsMauSac = MauSac.values();
         String[] itemsMauSac = new String[dsMauSac.length + 1];
@@ -1572,23 +1577,23 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         sanPhamUI.getCbDialogMauSac().setModel(mauSacCb);
         String maSP = sanPhamUI.getTxtMaSanPham().getText();
         Map<String, Object> conditions = new HashMap<>();
-        conditions.put("MaSP", maSP);
+        conditions.put("sanPham.maSP", maSP);
         String loai = maSP.substring(0, 1);
 
         //Lấy kích thước từ enum
         try {
             String[] kichThuoc;
             List<ChiTietPhienBanSanPham> pbsp = chiTietPhienBanSanPhamDAO.timKiem(conditions);
-            if(trangThaiNutThem == 0 && pbsp.size()>0){
-                if(pbsp.get(0).getKichThuoc().matches("\\d+")){
-                    kichThuoc = new String[]{"--Select--", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41","42", "43", "44", "45", "46", "47", "48"};
-                }else{
+            if (trangThaiNutThem == 0 && pbsp.size() > 0) {
+                if (pbsp.get(0).getKichThuoc().matches("\\d+")) {
+                    kichThuoc = new String[]{"--Select--", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48"};
+                } else {
                     kichThuoc = new String[]{"--Select--", "S", "M", "L", "XL", "XXL"};
                 }
-            }else{
-                if(loai.equalsIgnoreCase("Q")){
-                    kichThuoc = new String[]{"--Select--", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41","42", "43", "44", "45", "46", "47", "48"};
-                }else{
+            } else {
+                if (loai.equalsIgnoreCase("Q")) {
+                    kichThuoc = new String[]{"--Select--", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48"};
+                } else {
                     kichThuoc = new String[]{"--Select--", "S", "M", "L", "XL", "XXL"};
                 }
             }
@@ -1600,8 +1605,9 @@ public class ProductController implements ActionListener, MouseListener, KeyList
             throw new RuntimeException(e);
         }
     }
+
     //Load các comboBox phần tìm kiếm
-    public void loadComboBoxPhanTimKiem(){
+    public void loadComboBoxPhanTimKiem() {
         //Load cbDanhMuc
         try {
             dsDanhMucSanPham = danhMucSanPhamDAO.timKiem();
@@ -1673,7 +1679,7 @@ public class ProductController implements ActionListener, MouseListener, KeyList
     }
 
     //Hàm đóng/mở tương tác
-    public void tuongTac(boolean c){
+    public void tuongTac(boolean c) {
         sanPhamUI.getTxtTenSanPham().setEnabled(c);
         sanPhamUI.getJDateChooserNgaySanXuat().setEnabled(c);
         sanPhamUI.getTxtXuatXu().setEnabled(c);
@@ -1685,8 +1691,9 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         sanPhamUI.getTxtPhamTramLoi().setEnabled(c);
         sanPhamUI.getCbKieuNguoiMac().setEnabled(c);
     }
+
     //Hàm đóng/mở tương tác tìm kiếm
-    public void tuongTacTimKiem(boolean o){
+    public void tuongTacTimKiem(boolean o) {
         sanPhamUI.getCbTkDanhMuc().setEnabled(o);
         sanPhamUI.getCbTkLoaiSanPham().setEnabled(o);
         sanPhamUI.getCbTkTinhTrang().setEnabled(o);
@@ -1696,13 +1703,13 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         sanPhamUI.getTxtTuKhoaTimKiem().setEnabled(o);
     }
 
-//  Sự kiện click trên table load dữ liệu xuống phần thông tin
+    //  Sự kiện click trên table load dữ liệu xuống phần thông tin
     @Override
-    public void mouseClicked(MouseEvent event){
-        if(event.getSource().equals(sanPhamUI.getTbDanhSachSanPham())){
-            if(trangThaiNutThem==1){
+    public void mouseClicked(MouseEvent event) {
+        if (event.getSource().equals(sanPhamUI.getTbDanhSachSanPham())) {
+            if (trangThaiNutThem == 1) {
                 JOptionPane.showMessageDialog(null, "Đang thực hiện chức năng thêm, không được click!!");
-            }else {
+            } else {
                 int row = sanPhamUI.getTbDanhSachSanPham().getSelectedRow();
                 String ma = sanPhamUI.getTbDanhSachSanPham().getValueAt(row, 0).toString();
                 SanPham spHienThuc = null;
@@ -1719,7 +1726,8 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 Date date2 = null;
                 try {
                     date2 = new SimpleDateFormat("yyyy-mm-dd").parse(date);
-                } catch (ParseException e) {throw new RuntimeException(e);
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
 
                 }
                 sanPhamUI.getJDateChooserNgaySanXuat().setDate(date2);
@@ -1737,10 +1745,10 @@ public class ProductController implements ActionListener, MouseListener, KeyList
 
 
             }
-        }else if(event.getSource().equals(sanPhamUI.getTbDialogDanhSachCacSanPham())){
-            if(trangThaiNutThemPBSP == 1){
+        } else if (event.getSource().equals(sanPhamUI.getTbDialogDanhSachCacSanPham())) {
+            if (trangThaiNutThemPBSP == 1) {
                 JOptionPane.showMessageDialog(null, "Đang thực hiện chức năng thêm, không được click!!");
-            }else if(trangThaiNutThemPBSP == 0){
+            } else if (trangThaiNutThemPBSP == 0) {
 
                 int row = sanPhamUI.getTbDialogDanhSachCacSanPham().getSelectedRow();
                 String ms = sanPhamUI.getTbDialogDanhSachCacSanPham().getValueAt(row, 0).toString();
@@ -1751,8 +1759,8 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                 sanPhamUI.getCbDialogKichThuoc().setSelectedItem(kt);
                 sanPhamUI.getTxtDialogSoLuong().setText(sl);
                 try {
-//                    ChiTietPhienBanSanPham pbsp = chiTietPhienBanSanPhamDAO.timKiem(sanPhamUI.getTxtDialogMaSanPham().getText(), MauSac.layGiaTri(ms), kt);
-//                    importAnh(pbsp.getHinhAnh());
+                    List<ChiTietPhienBanSanPham> pbsp = chiTietPhienBanSanPhamDAO.timKiem(sanPhamUI.getTxtDialogMaSanPham().getText(), ms, kt);
+                    importAnh(pbsp.get(0).getHinhAnh());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -1760,18 +1768,22 @@ public class ProductController implements ActionListener, MouseListener, KeyList
         }
 
     }
+
     @Override
     public void mousePressed(MouseEvent e) {
 
     }
+
     @Override
     public void mouseReleased(MouseEvent e) {
 
     }
+
     @Override
     public void mouseEntered(MouseEvent e) {
 
     }
+
     @Override
     public void mouseExited(MouseEvent e) {
 
@@ -1794,12 +1806,12 @@ public class ProductController implements ActionListener, MouseListener, KeyList
 
     @Override
     public void onDelete(int row) {
-        if(sanPhamUI.getTbDialogDanhSachCacSanPham().isEditing()){
+        if (sanPhamUI.getTbDialogDanhSachCacSanPham().isEditing()) {
             sanPhamUI.getTbDialogDanhSachCacSanPham().getCellEditor().stopCellEditing();
         }
-        if(trangThaiNutThemPBSP == 0){
-            int result  = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa không?", "Thông báo", JOptionPane.YES_NO_OPTION);
-            if(result == JOptionPane.YES_OPTION){
+        if (trangThaiNutThemPBSP == 1) {
+            int result = JOptionPane.showConfirmDialog(null, "Bạn có chắc chắn muốn xóa không?", "Thông báo", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
                 String maSP = sanPhamUI.getTxtMaSanPham().getText();
                 String ms = sanPhamUI.getTbDialogDanhSachCacSanPham().getValueAt(row, 0).toString();
                 String kt = sanPhamUI.getTbDialogDanhSachCacSanPham().getValueAt(row, 1).toString();
@@ -1811,17 +1823,17 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                     throw new RuntimeException(ex);
                 }
             }
-        }else{
-
+        } else {
+            JOptionPane.showMessageDialog(null, "Không được xóa");
         }
     }
 
     @Override
     public void tableChanged(TableModelEvent e) {
-        if(e.getSource().equals(sanPhamUI.getTbDialogDanhSachCacSanPham())){
+        if (e.getSource().equals(sanPhamUI.getTbDialogDanhSachCacSanPham())) {
             DefaultTableModel tmPBSP = (DefaultTableModel) sanPhamUI.getTbDialogDanhSachCacSanPham().getModel();
             int row = e.getFirstRow();
-            String maPBSP =  sanPhamUI.getTxtDialogMaSanPham().getText()+"-"+tmPBSP.getValueAt(row, 0).toString()+"-"+tmPBSP.getValueAt(row, 1).toString();
+            String maPBSP = sanPhamUI.getTxtDialogMaSanPham().getText() + "-" + tmPBSP.getValueAt(row, 0).toString() + "-" + tmPBSP.getValueAt(row, 1).toString();
             try {
                 ChiTietPhienBanSanPham phienBanSanPham = new ChiTietPhienBanSanPham(maPBSP, sanPhamDAO.timKiem(sanPhamUI.getTxtDialogMaSanPham().getText()), MauSac.layGiaTri(tmPBSP.getValueAt(row, 0).toString()), tmPBSP.getValueAt(row, 1).toString(), Integer.parseInt(tmPBSP.getValueAt(row, 2).toString()), fileAnh);
                 listCTPBSP.add(phienBanSanPham);

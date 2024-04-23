@@ -24,16 +24,6 @@ public class QuanLySanPham extends JPanel {
      */
     public QuanLySanPham()  {
         initComponents();
-        TableActionEvent event = new TableActionEvent() {
-            @Override
-            public void onDelete(int row) {
-                if(tbDIalogDanhSachCacSanPham.isEditing()){
-                    tbDIalogDanhSachCacSanPham.getCellEditor().stopCellEditing();
-                }
-                DefaultTableModel defaultTableModel =  (DefaultTableModel) tbDIalogDanhSachCacSanPham.getModel();
-                defaultTableModel.removeRow(row);
-            }
-        };
         ProductController controller = new ProductController(this);
         tbDIalogDanhSachCacSanPham.getColumnModel().getColumn(3).setCellRenderer(new dev.skyherobrine.app.views.dashboard.component.nutXoaDongTb.TableActionCellRender());
         tbDIalogDanhSachCacSanPham.getColumnModel().getColumn(3).setCellEditor(new dev.skyherobrine.app.views.dashboard.component.nutXoaDongTb.TableActionCellEditor(controller));
@@ -51,7 +41,6 @@ public class QuanLySanPham extends JPanel {
         txtTuKhoaTimKiem.addKeyListener(controller);
 //        btnThemAnhSanPham.addActionListener(new ProductController(this));
         btnThemPBSP.addActionListener(controller);
-        tbDanhSachSanPham.addMouseListener(controller);
         jDateChooserNgaySanXuat.setEnabled(false);
         cbDoTuoi.setEnabled(false);
         cbDanhMuc.setEnabled(false);
@@ -62,14 +51,11 @@ public class QuanLySanPham extends JPanel {
         tbDIalogDanhSachCacSanPham.addMouseListener(controller);
         btnDialogThemXuong.addActionListener(controller);
         btnDialogAnh.addActionListener(controller);
-        btnThemQuanLySanPham.addActionListener(controller);
-        btnXoaQuanLySanPham.addActionListener(controller);
-        btnSuaQuanLySanPham.addActionListener(controller);
         cbLoaiSanPham.addActionListener(controller);
         cbKieuNguoiMac.addActionListener(controller);
         tbDIalogDanhSachCacSanPham.getModel().addTableModelListener(controller);
         txtDialogMaSanPham.setEnabled(false);
-
+        btnDialogXong.addActionListener(controller);
     }
 
     /**
