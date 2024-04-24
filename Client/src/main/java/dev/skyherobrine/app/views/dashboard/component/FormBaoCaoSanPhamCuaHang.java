@@ -6,6 +6,8 @@ package dev.skyherobrine.app.views.dashboard.component;
 
 //import dev.skyherobrine.app.controllers.dashboardui.thongKe.thongKeSanPhamController;
 
+import dev.skyherobrine.app.controllers.dashboardui.thongKe.thongKeSanPhamController;
+
 import javax.swing.*;
 
 /**
@@ -19,7 +21,7 @@ public class FormBaoCaoSanPhamCuaHang extends JPanel {
      */
     public FormBaoCaoSanPhamCuaHang() {
         initComponents();
-//        thongKeSanPhamController controller = new thongKeSanPhamController(this);
+        thongKeSanPhamController controller = new thongKeSanPhamController(this);
     }
 
     /**

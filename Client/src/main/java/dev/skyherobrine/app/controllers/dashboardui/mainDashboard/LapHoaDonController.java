@@ -17,6 +17,7 @@ import dev.skyherobrine.app.entities.person.NhanVien;
 import dev.skyherobrine.app.entities.product.ChiTietPhienBanSanPham;
 import dev.skyherobrine.app.entities.product.SanPham;
 import dev.skyherobrine.app.views.dashboard.component.LapHoaDon;
+import dev.skyherobrine.app.views.dashboard.component.QuanLyHoaDon;
 import dev.skyherobrine.app.views.dashboard.component.nutDuyetVaNutXoaDongTb.TableActionEvent1;
 import dev.skyherobrine.app.views.dashboard.component.nutXoaDongTb.TableActionEvent;
 import net.sf.jasperreports.engine.*;
@@ -325,7 +326,7 @@ public class LapHoaDonController implements KeyListener, Runnable, ThreadFactory
         String nlap = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         Map<String, Object> conditions = new HashMap<>();
-        conditions.put("ma_hd", "%" + nlap + "%");
+        conditions.put("maHD", "%" + nlap + "%");
         List<HoaDon> hoaDons = new ArrayList<>();
         try {
             hoaDons = hoaDonDAO.timKiem(conditions);
@@ -423,7 +424,7 @@ public class LapHoaDonController implements KeyListener, Runnable, ThreadFactory
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
+            new QuanLyHoaDon();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
