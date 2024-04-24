@@ -151,8 +151,8 @@ public class ProductController implements ActionListener, MouseListener, KeyList
                                 loadDsSanPham();
                                 xoaTrangAll();
                                 JOptionPane.showMessageDialog(null, "Thêm thành công!");
-//                                trangThaiNutThem = 1;
-//                                trangThaiNutXoa = 0;
+                                trangThaiNutThem = 1;
+                                trangThaiNutXoa = 1;
                                 listCTPBSP.clear();
                                 dsChiTietPhienBanSanPham.clear();
                                 System.out.println(trangThaiNutThem);
