@@ -49,7 +49,6 @@ public class NhanVienController implements ActionListener, MouseListener, KeyLis
         DefaultTableModel clearTable = (DefaultTableModel) nhanVienUI.getTbDanhSachNhanVien().getModel();
         clearTable.setRowCount(0);
         nhanVienUI.getTbDanhSachNhanVien().setModel(clearTable);
-        tuongTac(false);
         try {
             dsNhanVien = nhanVienDAO.timKiem();
             DefaultTableModel tmNhanVien = (DefaultTableModel) nhanVienUI.getTbDanhSachNhanVien().getModel();
