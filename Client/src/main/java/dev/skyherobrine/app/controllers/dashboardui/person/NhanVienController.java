@@ -201,6 +201,8 @@ public class NhanVienController implements ActionListener, MouseListener, KeyLis
             if(!nhanVienUI.getCbTkGioiTinh().getSelectedItem().equals("--Giới tính--")){
                 Map<String, Object> conditions = new HashMap<>();
                 conditions.put("gioiTinh", nhanVienUI.getCbTkGioiTinh().getSelectedItem().equals("NAM")? true:false);
+                conditions.put("gioiTinh", nhanVienUI.getCbTkGioiTinh().getSelectedItem().equals("NAM") ? "%true%":"%false%");
+                System.out.println(conditions);
                 try {
                     dsLoc = nhanVienDAO.timKiem(conditions);
                 } catch (Exception e) {
@@ -273,10 +275,11 @@ public class NhanVienController implements ActionListener, MouseListener, KeyLis
             else if (!nhanVienUI.getCbTkChucVu().getSelectedItem().equals("--Chức vụ--")) {
                 Map<String, Object> conditions = new HashMap<>();
                 String chucVu = nhanVienUI.getCbTkChucVu().getSelectedItem().toString();
+                ChucVu value = ChucVu.layGiaTri(chucVu);
                 if(chucVu.equals("QUAN_LY_NHAN_SU")){
-                    conditions.put("chucVu", ChucVu.QUAN_LY_NHAN_SU);
+                    conditions.put("chucVu", value);
                 } else{
-                    conditions.put("chucVu", ChucVu.NHAN_VIEN_BAN_HANG);
+                    conditions.put("chucVu", value);
                 }
                 try {
                     dsLoc = nhanVienDAO.timKiem(conditions);
@@ -314,6 +317,7 @@ public class NhanVienController implements ActionListener, MouseListener, KeyLis
             else if(!nhanVienUI.getCbTkCaLamViec().getSelectedItem().equals("--Ca làm việc--")){
                 Map<String, Object> conditions = new HashMap<>();
                 String caLamViec = nhanVienUI.getCbTkCaLamViec().getSelectedItem().toString();
+                CaLamViec value = CaLamViec.layGiaTri(caLamViec);
                 if(caLamViec.equals("CA_1")){
                     conditions.put("caLamViec", CaLamViec.CA_1);
                 }  else{
@@ -481,6 +485,9 @@ public class NhanVienController implements ActionListener, MouseListener, KeyLis
         String[] itemsPhongCachMac = new String[dsChucVu.length + 1];
         itemsPhongCachMac[0] = "--Select--";
         for (int i = 0; i < dsChucVu.length; i++) {
+            if(dsChucVu[i].toString().equals("ADMIN") && trangThaiNutThemNV == 1){
+                continue;
+            }
             itemsPhongCachMac[i + 1] = dsChucVu[i].toString();
         }
         DefaultComboBoxModel<String> PhongCachMacCb = new DefaultComboBoxModel<>(itemsPhongCachMac);
