@@ -130,7 +130,7 @@ public class PhieuTraKHController implements KeyListener, TableModelListener, Ac
             double tt = 0;
             double giaBan = 0;
             Map<String, Object> conditions2= new HashMap<>();
-            conditions.put("hoaDon.maHD", maHD);
+            conditions2.put("hoaDon.maHD", maHD);
             List<PhieuTraKhachHang> phieuTraKhachHangs = phieuTraKhachHangDAO.timKiem(conditions2);
             if(!phieuTraKhachHangs.isEmpty()){
                 JOptionPane.showMessageDialog(null, "Hóa đơn này đã được trả hàng");
@@ -206,7 +206,6 @@ public class PhieuTraKHController implements KeyListener, TableModelListener, Ac
                 }else{
                     for(int i = 0; i < listHD.size(); i++){
                         nMua = listHD.get(i).getNgayLap().toString();
-                        System.out.println(nMua);
                         nMua = nMua.substring(0, nMua.indexOf('T'));
                         nlapHD = LocalDate.parse(nMua, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                         if(Period.between(nlapHD, LocalDate.now()).getDays()<7){
@@ -273,30 +272,25 @@ public class PhieuTraKHController implements KeyListener, TableModelListener, Ac
         }
     }
     public void xuatHoaDon(){
-        try {
+
             DefaultTableModel tmCTHoaDon = (DefaultTableModel) quanLyPhieuTraHangChoKhachHang.getTbDanhSachSanPhamTrongHoaDon().getModel();
-            JasperDesign jd = JRXmlLoader.load("src/main/resources/HoaDon/phieutra.jrxml");
+
             Map<String, Object> data= new HashMap<>();
-            JasperReport report = JasperCompileManager.compileReport(jd);
             data.put("ThanhTien", tmCTHoaDon.getValueAt(0, 6).toString());
             double tienTT = Double.parseDouble(quanLyPhieuTraHangChoKhachHang.getTxtTongTienHang().getText());
             double tienTra = Double.parseDouble(quanLyPhieuTraHangChoKhachHang.getTxtTongTienTraLai().getText());
             String maHD = maPTKH;
-            data.put("MaPhieuTraKH", maPTKH);
+            data.put("ma_phieu_tra_khach_hang", maPTKH);
             data.put("GiaTri", tienTT);
             data.put("TongTienTraLai", tienTra);
             data.put("TienHang", tienTT);
             JasperPrint jprint = null;
             try {
-                jprint = hoaDonDAO.xuatHoaDon(data);
+                jprint = phieuTraKhachHangDAO.xuatHoaDon(data);
                 JasperViewer.viewReport(jprint, false);
             } catch (Exception e) {
                e.printStackTrace();
             }
-
-        } catch (JRException e) {
-            throw new RuntimeException(e);
-        }
     }
     public String taoMaPhieuTraKH(){
         maPTKH = "PTH-";
